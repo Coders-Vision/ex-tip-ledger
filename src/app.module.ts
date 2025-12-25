@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { LoggerModule } from './common/logger';
+import { EnvironmentModule } from './common/config';
+import { HealthModule } from './common/health/health.module';
+import { DatabaseModule } from './common/database';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    EnvironmentModule.forRoot({
+      envFilePath: `./.env`,
+    }),
+    LoggerModule,
+    DatabaseModule,
+    HealthModule,
+  ],
 })
-export class AppModule {}
+export class AppModule { }

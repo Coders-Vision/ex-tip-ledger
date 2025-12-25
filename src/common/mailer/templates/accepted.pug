@@ -1,0 +1,110 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .logo {
+        max-width: 150px;
+        height: auto;
+      }
+      .illustration {
+        max-width: 300px;
+        margin: 20px auto;
+        display: block;
+      }
+      .content {
+        background-color: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #666;
+      }
+      .highlight {
+        color: #166534;
+        font-weight: bold;
+      }
+      .company-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+      .notice {
+        background-color: #f3f4f6;
+        padding: 15px;
+        border-left: 4px solid #166534;
+        margin: 20px 0;
+      }
+
+  body
+    .header
+      //- Job Portal Logo placeholder
+      img.logo(src="${logoUrl}" alt="Job Portal Logo")
+    
+    .content
+      h1 Great News, #{applicantName}!
+      
+      p Your application for 
+        span.highlight #{jobRole}
+        |  at #{companyName} has been accepted!
+      
+      //- Success illustration placeholder
+      img.illustration(src="${illustrationUrl}" alt="Success illustration")
+      
+      .company-card
+        h2 Position Details
+        p
+          strong Company: 
+          | #{companyName}
+        p
+          strong Role: 
+          | #{jobRole}
+      
+      .notice
+        p 
+          strong Next Steps:
+          |  The hiring team from #{companyName} will contact you directly within the next 2-3 business days to discuss:
+        ul
+          li Detailed job offer
+          li Compensation package
+          li Start date and onboarding process
+          li Additional requirements or documentation
+      
+      p Please ensure your contact information in your profile is up to date:
+      ul
+        li Email: #{userEmail}
+        li Phone: #{userPhone}
+      
+      p You can update your contact details anytime by visiting your profile on our portal.
+      
+      p
+        | Best wishes for your new role!
+        br
+        br
+        | Best regards,
+        br
+        | The Dawraq Team
+    
+    .footer
+      p.
+        This is a notification from Dawraq. The hiring process will be handled directly 
+        by #{companyName}. Please wait for their contact.
+      p © #{new Date().getFullYear()} #{portalName}. All rights reserved.

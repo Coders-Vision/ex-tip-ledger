@@ -1,0 +1,114 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .logo {
+        max-width: 150px;
+        height: auto;
+      }
+      .illustration {
+        max-width: 300px;
+        margin: 20px auto;
+        display: block;
+      }
+      .content {
+        background-color: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #666;
+      }
+      .application-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+      .tracking-info {
+        background-color: #f3f4f6;
+        padding: 15px;
+        border-left: 4px solid #2c5282;
+        margin: 20px 0;
+      }
+      .highlight {
+        color: #2c5282;
+        font-weight: bold;
+      }
+      .status-tag {
+        display: inline-block;
+        background-color: #e2e8f0;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.9em;
+      }
+
+  body
+    .header
+      //- Logo placeholder
+      img.logo(src="${logoUrl}" alt="Dawraq")
+    
+    .content
+      h1 Application Submitted Successfully!
+      
+      p Dear #{applicantName},
+      
+      p Your application has been successfully submitted through Dawraq.
+      
+      //- Illustration placeholder
+      img.illustration(src="${illustrationUrl}" alt="Application submitted illustration")
+      
+      .application-card
+        h2 Application Details
+        //- p
+        //-   strong Company: 
+        //-   | #{companyName}
+        p
+          strong Position: 
+          | #{jobRole}
+
+      .tracking-info
+        h3 What happens next?
+        ul
+          //- li Your application will be reviewed by #{companyName}'s hiring team
+          li If your profile matches their requirements, they will contact you directly
+          li You can track your application status anytime by logging into your Dawraq account
+          //- li All communication regarding the position will come directly from #{companyName}
+      
+      p Important information:
+      ul
+        li Keep your profile up to date with your latest contact information
+        li You can view and manage all your applications in your dashboard
+        li Our portal will notify you of any status changes to your application
+        //- li The hiring process timeline may vary based on #{companyName}'s recruitment process
+      
+      p
+        | Good luck with your application!
+        br
+        br
+        | Best regards,
+        br
+        | The Dawraq Team
+    
+    .footer
+      p Track your application status: 
+      p This is an automated message from Dawraq. Please do not reply to this email.
+      p © #{new Date().getFullYear()} Dawraq. All rights reserved.
