@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { MerchantsService } from './merchants.service';
-import { MerchantTipSummaryDto } from './dto';
+import { MerchantTipSummaryDto, ParamMerchantDto } from './dto';
 
 @ApiTags('Merchants')
 @Controller('merchants')
@@ -10,6 +10,12 @@ export class MerchantsController {
 
   @Get(':id/tips/summary')
   @ApiOperation({ summary: 'Get tip summary for a merchant grouped by status' })
+  @ApiParam({
+    name: 'id',
+    description: 'Merchant UUID',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiResponse({
     status: 200,
     description: 'Tip summary retrieved successfully',
@@ -17,8 +23,8 @@ export class MerchantsController {
   })
   @ApiResponse({ status: 404, description: 'Merchant not found' })
   async getTipSummary(
-    @Param('id') id: string,
+    @Param() params: ParamMerchantDto,
   ): Promise<MerchantTipSummaryDto> {
-    return this.merchantsService.getTipSummary(id);
+    return this.merchantsService.getTipSummary(params.id);
   }
 }

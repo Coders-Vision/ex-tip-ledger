@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RepositoryModule } from './repository.module';
 import {
+  Employee,
+  LedgerEntry,
   Merchant,
   TipIntent,
   User,
@@ -39,6 +41,8 @@ import { TipIntentRepository } from './repositories/tip-intent.repository';
       { entity: User }, // Default repository for User
       { entity: Merchant }, // Default repository for Merchant
       { entity: TipIntent, repository: TipIntentRepository }, // Custom repository for TipIntent
+      { entity: LedgerEntry },
+      { entity: Employee}
     ]),
   ],
   exports: [RepositoryModule],

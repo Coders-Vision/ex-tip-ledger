@@ -4,6 +4,7 @@ import { EnvironmentModule } from './common/config';
 import { HealthModule } from './common/health/health.module';
 import { DatabaseModule } from './common/database';
 import { MerchantsModule } from './modules/merchants/merchants.module';
+import { EmployeesModule } from './modules/employees/employees.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MerchantsModule } from './modules/merchants/merchants.module';
     DatabaseModule,
     HealthModule,
     MerchantsModule,
+    EmployeesModule
   ],
 })
 export class AppModule { }
