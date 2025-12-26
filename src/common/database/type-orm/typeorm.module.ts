@@ -6,6 +6,8 @@ import {
   Employee,
   LedgerEntry,
   Merchant,
+  ProcessedEvent,
+  TableQR,
   TipIntent,
   User,
 } from './entities';
@@ -42,7 +44,9 @@ import { TipIntentRepository } from './repositories/tip-intent.repository';
       { entity: Merchant }, // Default repository for Merchant
       { entity: TipIntent, repository: TipIntentRepository }, // Custom repository for TipIntent
       { entity: LedgerEntry },
-      { entity: Employee}
+      { entity: Employee },
+      { entity: TableQR },
+      { entity: ProcessedEvent }
     ]),
   ],
   exports: [RepositoryModule],

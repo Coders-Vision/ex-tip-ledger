@@ -45,6 +45,10 @@ export class TipIntent extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   employeeHint: string;
 
+  // Table code for reference
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  tableCode: string;
+
   // Timestamps for state transitions
   @Column({ type: 'timestamptz', nullable: true })
   confirmedAt: Date;
