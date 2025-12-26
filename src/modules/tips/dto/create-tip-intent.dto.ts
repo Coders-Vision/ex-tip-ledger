@@ -10,6 +10,13 @@ export class CreateTipIntentDto {
   merchantId: string;
 
   @ApiProperty({
+    description: 'Employee ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  employeeId: string;
+
+  @ApiProperty({
     description: 'Table code where tip originates',
     example: 'T1',
     maxLength: 50,

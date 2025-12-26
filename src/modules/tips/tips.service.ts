@@ -57,6 +57,7 @@ export class TipsService {
     // Create new tip intent
     const tipIntent = this.tipIntentRepo.create({
       merchantId: dto.merchantId,
+      employeeId: dto.employeeId,
       tableQRId: tableQR.id,
       amount: dto.amount,
       status: TipIntentStatus.PENDING,
@@ -90,6 +91,7 @@ export class TipsService {
 
       //  Idempotent - already confirmed
       if (tipIntent.status === TipIntentStatus.CONFIRMED) {
+        this.logger.log(`Tip intent '${id}' is already confirmed`);
         return this.mapToResponse(tipIntent);
       }
 
