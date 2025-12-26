@@ -3,8 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RepositoryModule } from './repository.module';
 import {
+  Merchant,
+  TipIntent,
   User,
 } from './entities';
+import { TipIntentRepository } from './repositories/tip-intent.repository';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -33,8 +36,9 @@ import {
 
     // Register RepositoryModule for required entities
     RepositoryModule.forRepositories([
-      // { entity: User },
-      // { entity: User, repository: UserRepository }, // Custom repository for User
+      { entity: User }, // Default repository for User
+      { entity: Merchant }, // Default repository for Merchant
+      { entity: TipIntent, repository: TipIntentRepository }, // Custom repository for TipIntent
     ]),
   ],
   exports: [RepositoryModule],
