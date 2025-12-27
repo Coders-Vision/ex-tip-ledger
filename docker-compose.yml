@@ -22,8 +22,11 @@ services:
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-x7K9mP2vL4nQ8wR3jF6hT1bY5cA0eU2s}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-z3N8kW5pM1xJ7vD4qL9fH2yR6bT0cS8a}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - tip-ledger-network
@@ -48,8 +51,28 @@ services:
     networks:
       - tip-ledger-network
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tip-ledger-network
+
 volumes:
   postgres_data:
+  rabbitmq_data:
 
 networks:
   tip-ledger-network:

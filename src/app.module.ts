@@ -8,6 +8,7 @@ import { EmployeesModule } from './modules/employees/employees.module';
 import { TipsModule } from './modules/tips/tips.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { QueueModule } from './common/queue/queue.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UsersModule } from './modules/users/users.module';
     MerchantsModule,
     EmployeesModule,
     TipsModule,
+    QueueModule,
   ],
 })
 export class AppModule {}

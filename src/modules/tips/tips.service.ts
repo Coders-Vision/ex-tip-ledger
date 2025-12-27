@@ -2,20 +2,20 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {  DataSource } from 'typeorm';
-import { TipIntent, TipIntentStatus,LedgerEntry, LedgerEntryType  } from 'src/common/database/type-orm/entities';
+import { DataSource } from 'typeorm';
+import { TipIntent, TipIntentStatus, LedgerEntry, LedgerEntryType } from 'src/common/database/type-orm/entities';
 import { TableQR } from 'src/common/database/type-orm/entities';
 import { CreateTipIntentDto, TipIntentResponseDto } from './dto';
 import { BaseRepository, TipIntentRepository } from 'src/common/database/type-orm/repositories';
+import { ProducerService } from 'src/common/queue/producer.service';
 
 @Injectable()
 export class TipsService {
- private readonly logger = new Logger(TipsService.name);
- 
+  private readonly logger = new Logger(TipsService.name);
+
   constructor(
     @InjectRepository(TipIntent)
     private readonly tipIntentRepo: TipIntentRepository,
@@ -23,8 +23,8 @@ export class TipsService {
     private readonly ledgerRepo: BaseRepository<LedgerEntry>,
     @InjectRepository(TableQR)
     private readonly tableQRRepo: BaseRepository<TableQR>,
-    private readonly dataSource: DataSource,    
-    
+    private readonly dataSource: DataSource,
+    private readonly producerService: ProducerService,
   ) {}
 
   /**
@@ -67,6 +67,18 @@ export class TipsService {
     });
 
     await this.tipIntentRepo.save(tipIntent);
+
+    // Emit TIP_INTENT_CREATED event
+    await this.producerService.emitTipIntentCreated({
+      tipIntentId: tipIntent.id,
+      merchantId: tipIntent.merchantId,
+      employeeId: tipIntent.employeeId,
+      tableQRId: tipIntent.tableQRId,
+      tableCode: tipIntent.tableCode,
+      amount: Number(tipIntent.amount),
+      status: tipIntent.status,
+      idempotencyKey: tipIntent.idempotencyKey,
+    });
 
     return this.mapToResponse(tipIntent);
   }
@@ -123,6 +135,21 @@ export class TipsService {
       });
       await manager.save(LedgerEntry, ledgerEntry);
 
+      // Emit TIP_CONFIRMED event (outside transaction for reliability)
+      setImmediate(async () => {
+        await this.producerService.emitTipConfirmed({
+          tipIntentId: tipIntent.id,
+          merchantId: tipIntent.merchantId,
+          employeeId: tipIntent.employeeId,
+          tableQRId: tipIntent.tableQRId,
+          tableCode: tipIntent.tableCode,
+          amount: Number(tipIntent.amount),
+          status: tipIntent.status,
+          idempotencyKey: tipIntent.idempotencyKey,
+          confirmedAt: tipIntent.confirmedAt,
+        });
+      });
+
       return this.mapToResponse(tipIntent);
     });
   }
@@ -170,6 +197,21 @@ export class TipsService {
         notes: `Tip reversed from ${tipIntent.tableCode}`,
       });
       await manager.save(LedgerEntry, reversalEntry);
+
+      // Emit TIP_REVERSED event (outside transaction for reliability)
+      setImmediate(async () => {
+        await this.producerService.emitTipReversed({
+          tipIntentId: tipIntent.id,
+          merchantId: tipIntent.merchantId,
+          employeeId: tipIntent.employeeId,
+          tableQRId: tipIntent.tableQRId,
+          tableCode: tipIntent.tableCode,
+          amount: Number(tipIntent.amount),
+          status: tipIntent.status,
+          idempotencyKey: tipIntent.idempotencyKey,
+          reversedAt: tipIntent.reversedAt,
+        });
+      });
 
       return this.mapToResponse(tipIntent);
     });
