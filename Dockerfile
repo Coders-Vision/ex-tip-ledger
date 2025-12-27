@@ -26,14 +26,16 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
 # Install production dependencies only
 RUN pnpm install --prod --frozen-lockfile
 
-# Copy migrations for runtime migration execution
+# Copy migrations and seeds for runtime execution
 COPY --from=builder /app/src/migrations ./src/migrations
-COPY --from=builder /app/src/common/database/type-orm/data-source.ts ./src/common/database/type-orm/data-source.ts
+COPY --from=builder /app/src/common/database/type-orm ./src/common/database/type-orm
+COPY --from=builder /app/src/common/database/seeds ./src/common/database/seeds
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-# Install typeorm CLI dependencies for migrations
-RUN pnpm add typeorm ts-node typescript
+# Install typeorm CLI dependencies for migrations and seeding
+RUN pnpm add typeorm ts-node typescript @faker-js/faker
 
 EXPOSE 3000
 
-# Run migrations and start the app
-CMD ["sh", "-c", "pnpm migration:run && node dist/main"]
+# Run migrations, seed, and start the app
+CMD ["sh", "-c", "pnpm migration:run && pnpm seed && node dist/main"]

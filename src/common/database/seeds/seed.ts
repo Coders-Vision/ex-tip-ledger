@@ -1,92 +1,115 @@
 import { DataSource } from 'typeorm';
+import { faker } from '@faker-js/faker';
+import * as bcrypt from 'bcrypt';
+import { User, UserRole } from '../type-orm/entities/user.entity';
 import { Merchant } from '../type-orm/entities/merchant.entity';
 import { Employee } from '../type-orm/entities/employee.entity';
 import { TableQR } from '../type-orm/entities/table-qr.entity';
 
 /**
- * Seed database with initial test data
+ * Seed database with demo data using faker
  */
 export async function seedDatabase(dataSource: DataSource): Promise<void> {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Seeding database...\n');
 
+  const userRepo = dataSource.getRepository(User);
   const merchantRepo = dataSource.getRepository(Merchant);
   const employeeRepo = dataSource.getRepository(Employee);
   const tableQRRepo = dataSource.getRepository(TableQR);
 
-  // Create test merchant
-  const merchant = merchantRepo.create({
-    name: 'Test Restaurant',
-    email: 'restaurant@example.com',
-    phone: '+1234567890',
-    active: true,
-  });
-  await merchantRepo.save(merchant);
-  console.log(`✅ Created merchant: ${merchant.name}`);
+  // Check if already seeded
+  const existingUsers = await userRepo.count();
+  if (existingUsers > 0) {
+    console.log('⏭️  Database already seeded, skipping...\n');
+    return;
+  }
 
-  // Create test employees
-  const employees = await employeeRepo.save([
-    {
-      name: 'Ahmed Ali',
-      email: 'ahmed@example.com',
-      phone: '+1234567891',
-      merchantId: merchant.id,
-      active: true,
-    },
-    {
-      name: 'Sara Mohammed',
-      email: 'sara@example.com',
-      phone: '+1234567892',
-      merchantId: merchant.id,
-      active: true,
-    },
-    {
-      name: 'Omar Hassan',
-      email: 'omar@example.com',
-      phone: '+1234567893',
-      merchantId: merchant.id,
-      active: true,
-    },
-  ]);
-  console.log(`✅ Created ${employees.length} employees`);
+  const hashedPassword = await bcrypt.hash('Password123!', 10);
 
-  // Create test table QR codes
-  const tables = await tableQRRepo.save([
-    {
-      tableCode: 'T1',
-      location: 'Main dining area - Table 1',
-      merchantId: merchant.id,
+  // Create 4 merchants with users
+  const merchantData = [
+    { name: 'Al Salam Restaurant', location: 'Main Hall' },
+    { name: 'Golden Fork Cafe', location: 'Terrace' },
+    { name: 'Ocean Breeze Grill', location: 'Patio' },
+    { name: 'Mountain View Diner', location: 'Rooftop' },
+  ];
+
+  const merchants: Merchant[] = [];
+
+  for (let i = 0; i < 4; i++) {
+    const user = userRepo.create({
+      email: faker.internet.email({ firstName: merchantData[i].name.split(' ')[0].toLowerCase() }),
+      password: hashedPassword,
+      name: faker.person.fullName(),
+      phone: faker.phone.number(),
+      role: UserRole.MERCHANT,
       active: true,
-    },
-    {
-      tableCode: 'T2',
-      location: 'Main dining area - Table 2',
-      merchantId: merchant.id,
+    });
+    await userRepo.save(user);
+
+    const merchant = merchantRepo.create({
+      name: merchantData[i].name,
+      email: user.email,
+      phone: user.phone,
+      userId: user.id,
       active: true,
-    },
-    {
-      tableCode: 'T3',
-      location: 'Patio - Table 3',
-      merchantId: merchant.id,
+    });
+    await merchantRepo.save(merchant);
+    merchants.push(merchant);
+    console.log(`✅ Created merchant: ${merchant.name} (${user.email})`);
+  }
+
+  // Create 4 employees (1 per merchant) with users
+  const employees: Employee[] = [];
+
+  for (let i = 0; i < 4; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const user = userRepo.create({
+      email: faker.internet.email({ firstName, lastName }),
+      password: hashedPassword,
+      name: `${firstName} ${lastName}`,
+      phone: faker.phone.number(),
+      role: UserRole.EMPLOYEE,
       active: true,
-    },
-    {
-      tableCode: 'T4',
-      location: 'Bar area - Table 4',
-      merchantId: merchant.id,
+    });
+    await userRepo.save(user);
+
+    const employee = employeeRepo.create({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      userId: user.id,
+      merchantId: merchants[i].id,
       active: true,
-    },
-    {
-      tableCode: 'T5',
-      location: 'Private room - Table 5',
-      merchantId: merchant.id,
-      active: true,
-    },
-  ]);
+    });
+    await employeeRepo.save(employee);
+    employees.push(employee);
+    console.log(`✅ Created employee: ${employee.name} at ${merchants[i].name}`);
+  }
+
+  // Create 2 tables per merchant (8 total)
+  const tables: TableQR[] = [];
+
+  for (const merchant of merchants) {
+    for (let t = 1; t <= 2; t++) {
+      const table = tableQRRepo.create({
+        tableCode: `T${t}`,
+        location: `${merchantData[merchants.indexOf(merchant)].location} - Table ${t}`,
+        merchantId: merchant.id,
+        active: true,
+      });
+      await tableQRRepo.save(table);
+      tables.push(table);
+    }
+  }
   console.log(`✅ Created ${tables.length} table QR codes`);
 
   console.log('\n🎉 Database seeded successfully!\n');
-  console.log('📝 Test Data:');
-  console.log(`   Merchant ID: ${merchant.id}`);
-  console.log(`   Employees: ${employees.map((e) => e.id).join(', ')}`);
-  console.log(`   Tables: ${tables.map((t) => t.tableCode).join(', ')}`);
+  console.log('📝 Summary:');
+  console.log(`   Users: 8 (4 merchants + 4 employees)`);
+  console.log(`   Merchants: ${merchants.length}`);
+  console.log(`   Employees: ${employees.length}`);
+  console.log(`   Tables: ${tables.length}`);
+  console.log(`\n🔐 All users password: Password123!`);
 }
