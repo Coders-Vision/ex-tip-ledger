@@ -64,6 +64,7 @@ The Tip Ledger System is designed to handle digital tip transactions for restaur
 | **API Docs** | Swagger/OpenAPI |
 | **Testing** | Jest, Supertest |
 | **Logging** | Pino (nestjs-pino) |
+| **Message Queue** | RabbitMQ (amqp-connection-manager) |
 | **Containerization** | Docker, Docker Compose |
 
 ---
@@ -97,6 +98,11 @@ src/
 │   ├── interceptors/                # Response interceptors
 │   ├── logger/                      # Pino logger setup
 │   ├── mailer/                      # Email service
+│   ├── queue/                       # RabbitMQ messaging
+│   │   ├── queue.module.ts          # Queue module
+│   │   ├── producer.service.ts      # Event producer
+│   │   ├── consumer.service.ts      # Event consumer
+│   │   └── events.interface.ts      # Event types
 │   └── swagger/                     # Swagger configuration
 │
 ├── modules/                         # Feature modules
@@ -185,19 +191,19 @@ test/
 
 ```
            ┌───────────┐
-           │  PENDING  │
+           │  PENDING  │ ──▶ TIP_INTENT_CREATED event
            └─────┬─────┘
                  │
                  │ confirm()
                  ▼
            ┌───────────┐
-           │ CONFIRMED │
+           │ CONFIRMED │ ──▶ TIP_CONFIRMED event
            └─────┬─────┘
                  │
                  │ reverse()
                  ▼
            ┌───────────┐
-           │  REVERSED │
+           │  REVERSED │ ──▶ TIP_REVERSED event
            └───────────┘
 ```
 
@@ -407,6 +413,123 @@ This prevents:
 
 ---
 
+## RabbitMQ Messaging
+
+### Overview
+
+The system uses RabbitMQ for asynchronous event-driven messaging. Tip lifecycle events are published to a **topic exchange**, allowing flexible routing and multiple consumers.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        TipsService                              │
+│  (createTipIntent / confirmTipIntent / reverseTipIntent)        │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      ProducerService                            │
+│                                                                 │
+│   emitTipIntentCreated()  ──▶  tip.intent.created               │
+│   emitTipConfirmed()      ──▶  tip.confirmed                    │
+│   emitTipReversed()       ──▶  tip.reversed                     │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Topic Exchange: tip_events                    │
+│                                                                 │
+│   Routing: tip.# ──▶ tip_events_queue                           │
+│   Routing: email.# ──▶ email_queue                              │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      ConsumerService                            │
+│                                                                 │
+│   ✓ Idempotency check via processed_events table                │
+│   ✓ ACK on success, NACK+requeue on failure                     │
+│   ✓ Safe for at-least-once delivery                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Event Types
+
+| Event | Routing Key | Emitted When |
+|-------|-------------|--------------|
+| `TIP_INTENT_CREATED` | `tip.intent.created` | New tip intent is created |
+| `TIP_CONFIRMED` | `tip.confirmed` | Tip is confirmed (PENDING → CONFIRMED) |
+| `TIP_REVERSED` | `tip.reversed` | Tip is reversed (CONFIRMED → REVERSED) |
+
+### Event Payload
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "TIP_CONFIRMED",
+  "timestamp": "2025-12-28T10:00:00Z",
+  "data": {
+    "tipIntentId": "uuid",
+    "merchantId": "uuid",
+    "employeeId": "uuid",
+    "tableQRId": "uuid",
+    "tableCode": "T1",
+    "amount": 5.25,
+    "status": "CONFIRMED",
+    "idempotencyKey": "unique-key-123",
+    "confirmedAt": "2025-12-28T10:00:00Z"
+  }
+}
+```
+
+### Consumer Idempotency (At-Least-Once Delivery)
+
+The consumer is designed to be **safe for at-least-once delivery**:
+
+1. **Unique Event ID**: Each event has a UUID `eventId`
+2. **Idempotency Check**: Before processing, check if `eventId` exists in `processed_events` table
+3. **Skip Duplicates**: If already processed, ACK and skip (no duplicate side effects)
+4. **Record Processing**: After successful processing, record `eventId` in database
+5. **Requeue on Failure**: If processing fails, NACK with requeue for retry
+
+```typescript
+// Consumer idempotency flow
+if (await isEventProcessed(eventId)) {
+  channel.ack(message);  // Already processed, skip
+  return;
+}
+
+// Process event...
+await markEventProcessed(eventId, eventType);
+channel.ack(message);
+```
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RABBITMQ_URL` | `amqp://localhost` | RabbitMQ connection URL |
+
+### Docker Setup
+
+RabbitMQ is included in docker-compose with management UI:
+
+```yaml
+rabbitmq:
+  image: rabbitmq:3-management-alpine
+  ports:
+    - "5672:5672"    # AMQP
+    - "15672:15672"  # Management UI
+  environment:
+    - RABBITMQ_DEFAULT_USER=guest
+    - RABBITMQ_DEFAULT_PASS=guest
+```
+
+**Management UI**: http://localhost:15672 (guest/guest)
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -483,8 +606,16 @@ Swagger UI available at: `http://localhost:3000/docs`
 ## Docker
 
 ```bash
-docker compose up --build  # Start services (API: 3000, DB:5433)
+docker compose up --build  # Start services (API: 3000, PostgreSQL: 5433, RabbitMQ: 5672/15672)
 ```
+
+### Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `tip-ledger-api` | 3000 | NestJS API |
+| `postgres` | 5433 | PostgreSQL database |
+| `rabbitmq` | 5672, 15672 | RabbitMQ (AMQP + Management UI) |
 
 ---
 
@@ -629,6 +760,8 @@ Tests:       11 passed, 11 total
 - [x] Authentication & authorization
 - [x] Role-based access control (MERCHANT/EMPLOYEE)
 - [x] Docker containerization
+- [x] RabbitMQ messaging for tip events
+- [x] Consumer idempotency (at-least-once delivery safe)
 - [ ] Rate limiting
 - [ ] Bulk tip operations
 - [ ] Export functionality (CSV/PDF)
