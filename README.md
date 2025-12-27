@@ -483,7 +483,6 @@ Swagger UI available at: `http://localhost:3000/docs`
 ## Docker
 
 ```bash
-cp .env.example .env       # Configure environment
 docker compose up --build  # Start services (API: 3000, DB:5433)
 ```
 

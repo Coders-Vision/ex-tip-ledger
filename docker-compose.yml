@@ -10,17 +10,17 @@ services:
       - "${PORT:-3000}:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - APP_ENV=${APP_ENV:-production}
+      - APP_ENV=${APP_ENV:-dev}
       - APP_NAME=${APP_NAME:-tip-ledger-service}
       - PORT=3000
-      - DB_HOST=${DB_HOST:-postgres}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - DB_NAME=${DB_NAME:-tips_db}
-      - DB_SSL=${DB_SSL:-false}
-      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - DB_SSL=false
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-x7K9mP2vL4nQ8wR3jF6hT1bY5cA0eU2s}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-z3N8kW5pM1xJ7vD4qL9fH2yR6bT0cS8a}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
     depends_on:
       postgres:
