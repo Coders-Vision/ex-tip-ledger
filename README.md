@@ -36,6 +36,12 @@ The Tip Ledger System is designed to handle digital tip transactions for restaur
 
 ## Features
 
+### Authentication & Authorization
+- ✅ **JWT Authentication** - Access/refresh token pattern with secure httpOnly cookies
+- ✅ **Role-Based Access Control** - Merchant and Employee roles with guards
+- ✅ **User Registration** - Automatic merchant/employee entity creation based on role
+
+### Tip Management
 - ✅ **Create Tip Intent** - Idempotent tip creation with unique key
 - ✅ **Confirm Tip** - Thread-safe confirmation with ledger entry (CREDIT)
 - ✅ **Reverse Tip** - Safe reversal with offsetting ledger entry (DEBIT)
@@ -52,6 +58,7 @@ The Tip Ledger System is designed to handle digital tip transactions for restaur
 | **Language** | TypeScript 5.9 |
 | **Database** | PostgreSQL 15 |
 | **ORM** | TypeORM 0.3 |
+| **Authentication** | JWT, Passport.js, bcrypt |
 | **Validation** | class-validator, class-transformer |
 | **API Docs** | Swagger/OpenAPI |
 | **Testing** | Jest, Supertest |
@@ -71,6 +78,7 @@ src/
 │   ├── database/                    # Database setup
 │   │   └── type-orm/
 │   │       ├── entities/            # TypeORM entities
+│   │       │   ├── user.entity.ts
 │   │       │   ├── merchant.entity.ts
 │   │       │   ├── employee.entity.ts
 │   │       │   ├── table-qr.entity.ts
@@ -82,7 +90,7 @@ src/
 │   ├── decorators/                  # Custom decorators
 │   ├── dto/                         # Shared DTOs
 │   ├── filters/                     # Exception filters
-│   ├── guard/                       # Auth guards
+│   ├── guard/                       # Auth guards (JWT, Admin, etc.)
 │   ├── health/                      # Health check endpoint
 │   ├── interceptors/                # Response interceptors
 │   ├── logger/                      # Pino logger setup
@@ -90,13 +98,26 @@ src/
 │   └── swagger/                     # Swagger configuration
 │
 ├── modules/                         # Feature modules
+│   ├── auth/                        # Authentication API
+│   │   ├── auth.module.ts
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   ├── strategies/              # Passport strategies
+│   │   │   ├── access-token.strategy.ts
+│   │   │   ├── refresh-token.strategy.ts
+│   │   │   └── google.strategy.ts
+│   │   └── dto/
+│   │
+│   ├── users/                       # Users API
+│   │   ├── users.module.ts
+│   │   ├── users.controller.ts
+│   │   └── users.service.ts
+│   │
 │   ├── tips/                        # Tips API
 │   │   ├── tips.module.ts
 │   │   ├── tips.controller.ts
 │   │   ├── tips.service.ts
 │   │   └── dto/
-│   │       ├── create-tip-intent.dto.ts
-│   │       └── tip-intent-response.dto.ts
 │   │
 │   ├── merchants/                   # Merchant API
 │   │   ├── merchants.module.ts
@@ -114,6 +135,7 @@ src/
 │
 test/
 ├── tips-required.e2e-spec.ts        # Required E2E tests
+├── auth.e2e-spec.ts                 # Auth E2E tests
 └── jest-e2e.json                    # Jest E2E config
 ```
 
@@ -125,13 +147,23 @@ test/
 
 ```
 ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│  Merchant   │───┬──▶│  Employee   │───┬──▶│ LedgerEntry │
-└─────────────┘   │   └─────────────┘   │   └─────────────┘
-       │          │          │          │          ▲
-       │          │          │          │          │
-       ▼          │          ▼          │          │
-┌─────────────┐   │   ┌─────────────┐   │          │
-│   TableQR   │───┘   │  TipIntent  │───┴──────────┘
+│    User     │──1:1─▶│  Merchant   │───┬──▶│ LedgerEntry │
+│             │       └─────────────┘   │   └─────────────┘
+│             │              │          │          ▲
+│             │              │          │          │
+│             │              ▼          │          │
+│             │       ┌─────────────┐   │          │
+│             │──1:1─▶│  Employee   │───┴──────────┘
+└─────────────┘       └─────────────┘
+       │                     │
+       │                     │
+       │              ┌─────────────┐
+       │              │  TipIntent  │
+       │              └─────────────┘
+       │
+       ▼
+┌─────────────┐       ┌─────────────┐
+│  Merchant   │──────▶│   TableQR   │
 └─────────────┘       └─────────────┘
 ```
 
@@ -139,8 +171,9 @@ test/
 
 | Entity | Description |
 |--------|-------------|
-| **Merchant** | Restaurant/business that receives tips |
-| **Employee** | Staff member who receives tips |
+| **User** | Authentication user with email, password, role (MERCHANT/EMPLOYEE) |
+| **Merchant** | Restaurant/business that receives tips (linked 1:1 to User) |
+| **Employee** | Staff member who receives tips (linked 1:1 to User) |
 | **TableQR** | QR code linked to a table at a merchant |
 | **TipIntent** | A tip transaction with state (PENDING/CONFIRMED/REVERSED) |
 | **LedgerEntry** | Immutable record of tip credit/debit |
@@ -181,6 +214,71 @@ test/
 ```
 http://localhost:3000
 ```
+
+### Authentication API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/register` | Register a new user (creates Merchant/Employee based on role) |
+| `POST` | `/auth/login` | Login with email/password |
+| `POST` | `/auth/refresh` | Refresh access token using refresh token |
+| `POST` | `/auth/logout` | Logout and invalidate tokens |
+| `GET` | `/auth/google` | Initiate Google OAuth flow |
+| `GET` | `/auth/google/callback` | Google OAuth callback |
+
+#### Register
+
+```bash
+POST /auth/register
+Content-Type: application/json
+
+{
+  "email": "merchant@example.com",
+  "password": "SecurePass123!",
+  "name": "John Doe",
+  "role": "MERCHANT"
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbG...",
+  "refreshToken": "eyJhbG...",
+  "userId": "uuid",
+  "email": "merchant@example.com",
+  "name": "John Doe",
+  "role": "MERCHANT",
+  "merchantId": "uuid"
+}
+```
+
+#### Login
+
+```bash
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "merchant@example.com",
+  "password": "SecurePass123!"
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbG...",
+  "refreshToken": "eyJhbG...",
+  "userId": "uuid",
+  "email": "merchant@example.com",
+  "name": "John Doe",
+  "role": "MERCHANT",
+  "merchantId": "uuid"
+}
+```
+
+> **Note:** For employees, the response includes `employeeId` instead of `merchantId`.
 
 ### Tips API
 
@@ -338,11 +436,22 @@ APP_NAME=tip-ledger-service
 NODE_ENV=dev
 PORT=3000
 
+# Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 DB_NAME=tips_db
+
+# JWT Authentication
+JWT_SECRET=your-jwt-secret-key
+JWT_ACCESS_EXPIRATION=15m
+JWT_REFRESH_EXPIRATION=7d
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 ```
 
 ### Database Setup
@@ -371,12 +480,13 @@ Swagger UI available at: `http://localhost:3000/docs`
 
 ## Testing
 
-### Required Tests
+### Test Suites
 
-The system includes 3 required E2E test suites covering:
+The system includes comprehensive E2E test suites:
 
 | Test Suite | Description | Tests |
 |------------|-------------|-------|
+| **Auth E2E** | Registration, login, refresh, logout, role-based auth | 26 tests |
 | **Idempotent Tip Creation** | Same idempotencyKey returns same result | 3 tests |
 | **Concurrent Confirmation** | Exactly 1 ledger entry with parallel requests | 3 tests |
 | **Reversal Behavior** | DEBIT entry, state transitions, net-zero balance | 5 tests |
@@ -388,10 +498,38 @@ The system includes 3 required E2E test suites covering:
 pnpm test:e2e
 
 # Run specific test file
+pnpm test:e2e auth.e2e-spec.ts
 pnpm test:e2e tips-required.e2e-spec.ts
 
 # Run with coverage
 pnpm test:cov
+```
+
+### Auth Test Results
+
+```
+Auth E2E Tests
+  Registration
+    ✓ should register a new merchant user
+    ✓ should register a new employee user
+    ✓ should return merchantId when registering as MERCHANT
+    ✓ should return employeeId when registering as EMPLOYEE
+    ✓ should fail registration with existing email
+    ✓ should fail registration with weak password
+  Login
+    ✓ should login with valid credentials
+    ✓ should return merchantId when logging in as MERCHANT
+    ✓ should return employeeId when logging in as EMPLOYEE
+    ✓ should fail login with wrong password
+    ✓ should fail login with non-existent email
+  Token Refresh
+    ✓ should refresh access token with valid refresh token
+    ✓ should fail refresh with invalid token
+  Logout
+    ✓ should logout successfully
+
+Test Suites: 1 passed, 1 total
+Tests:       26 passed, 26 total
 ```
 
 ### Test Results
@@ -478,10 +616,13 @@ Tests:       11 passed, 11 total
 
 ## Future Enhancements
 
-- [ ] Authentication & authorization
+- [x] Authentication & authorization
+- [x] Role-based access control (MERCHANT/EMPLOYEE)
 - [ ] Rate limiting
 - [ ] Bulk tip operations
 - [ ] Export functionality (CSV/PDF)
+- [ ] Admin dashboard
+- [ ] Real-time notifications (WebSockets)
 
 ---
 

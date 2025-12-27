@@ -1,8 +1,9 @@
-import { Entity, Column, OneToMany, Index, Table } from 'typeorm';
+import { Entity, Column, OneToMany, OneToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Employee } from './employee.entity';
 import { TableQR } from './table-qr.entity';
 import { TipIntent } from './tip-intent.entity';
+import { User } from './user.entity';
 
 /**
  * Merchant entity - represents a restaurant/business
@@ -21,6 +22,15 @@ export class Merchant extends BaseEntity {
 
   @Column({ type: 'boolean', default: true })
   active: boolean;
+
+  // Foreign key to user
+  @Column({ type: 'uuid', nullable: true })
+  userId: string;
+
+  // One-to-one relationship with User
+  @OneToOne(() => User, (user) => user.merchant, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
 
   // Relationships
   @OneToMany('Employee', 'merchant')

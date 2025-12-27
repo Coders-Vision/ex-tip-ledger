@@ -67,4 +67,25 @@ export class MerchantsService {
       netTotal,
     };
   }
+
+  /**
+   * Find a merchant by ID
+   */
+  async findById(id: string): Promise<Merchant | null> {
+    return this.merchantRepo.findOne({ where: { id } });
+  }
+
+  /**
+   * Find a merchant by user ID
+   */
+  async findByUserId(userId: string): Promise<Merchant | null> {
+    return this.merchantRepo.findOne({ where: { userId } });
+  }
+
+  /**
+   * Create a new merchant
+   */
+  async create(data: Partial<Merchant>): Promise<Merchant> {
+    return this.merchantRepo.save(data);
+  }
 }

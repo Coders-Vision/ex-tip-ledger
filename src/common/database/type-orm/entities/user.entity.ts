@@ -1,5 +1,7 @@
-import { Entity, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToOne } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { Merchant } from './merchant.entity';
+import { Employee } from './employee.entity';
 
 export enum UserRole {
   MERCHANT = 'merchant',
@@ -23,17 +25,14 @@ export class User extends BaseEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.EMPLOYEE })
   role: UserRole;
 
-
-  // OAuth-related fields
-  @Column({ default: false })
-  isOAuthUser: boolean;
-
-  @Column({ nullable: true })
-  providerId: string; // Unique ID from the OAuth provider (e.g., Google ID, Facebook ID)
-
-  @Column({ nullable: true })
-  provider: string; // The OAuth provider name (e.g., 'google', 'facebook', 'github')
-
   @Column({ default: true })
   active: boolean;
+
+  // One-to-one relationship with Merchant (if user is a merchant)
+  @OneToOne(() => Merchant, (merchant) => merchant.user, { nullable: true })
+  merchant?: Merchant;
+
+  // One-to-one relationship with Employee (if user is an employee)
+  @OneToOne(() => Employee, (employee) => employee.user, { nullable: true })
+  employee?: Employee;
 }

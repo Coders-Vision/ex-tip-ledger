@@ -47,4 +47,25 @@ export class EmployeesService {
       totalAmount: Math.round(totalAmount * 1000) / 1000, // Round to 3 decimal places
     };
   }
+
+  /**
+   * Find an employee by ID
+   */
+  async findById(id: string): Promise<Employee | null> {
+    return this.employeeRepo.findOne({ where: { id } });
+  }
+
+  /**
+   * Find an employee by user ID
+   */
+  async findByUserId(userId: string): Promise<Employee | null> {
+    return this.employeeRepo.findOne({ where: { userId } });
+  }
+
+  /**
+   * Create a new employee
+   */
+  async create(data: Partial<Employee>): Promise<Employee> {
+    return this.employeeRepo.save(data);
+  }
 }
