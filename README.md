@@ -14,6 +14,7 @@ A robust digital tip tracking system built with **NestJS + TypeScript** and **Po
 - [API Reference](#api-reference)
 - [Idempotency & Concurrency](#idempotency--concurrency)
 - [Getting Started](#getting-started)
+- [Docker Deployment](#docker-deployment)
 - [Testing](#testing)
 - [Design Decisions & Trade-offs](#design-decisions--trade-offs)
 
@@ -63,6 +64,7 @@ The Tip Ledger System is designed to handle digital tip transactions for restaur
 | **API Docs** | Swagger/OpenAPI |
 | **Testing** | Jest, Supertest |
 | **Logging** | Pino (nestjs-pino) |
+| **Containerization** | Docker, Docker Compose |
 
 ---
 
@@ -409,9 +411,10 @@ This prevents:
 
 ### Prerequisites
 
-- Node.js 18+
-- PostgreSQL 15+
+- Node.js 18+ (for local development)
+- PostgreSQL 15+ (for local development)
 - pnpm
+- Docker & Docker Compose (for containerized deployment)
 
 ### Installation
 
@@ -431,27 +434,26 @@ cp .env.example .env
 ### Environment Variables
 
 ```env
+# Application
+NODE_ENV=development
 APP_ENV=dev
 APP_NAME=tip-ledger-service
-NODE_ENV=dev
 PORT=3000
 
 # Database
 DB_HOST=localhost
 DB_PORT=5432
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
 DB_NAME=tips_db
+DB_SSL=false
 
 # JWT Authentication
-JWT_SECRET=your-jwt-secret-key
-JWT_ACCESS_EXPIRATION=15m
-JWT_REFRESH_EXPIRATION=7d
+JWT_ACCESS_SECRET=your-super-secret-access-key-change-in-production
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
 
-# Google OAuth (optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+# Frontend URL (for CORS and redirects)
+FRONTEND_URL=http://localhost:3001
 ```
 
 ### Database Setup
@@ -475,6 +477,15 @@ pnpm start:prod
 ### API Documentation
 
 Swagger UI available at: `http://localhost:3000/docs`
+
+---
+
+## Docker
+
+```bash
+cp .env.example .env       # Configure environment
+docker compose up --build  # Start services (API: 3000, DB:5433)
+```
 
 ---
 
@@ -618,6 +629,7 @@ Tests:       11 passed, 11 total
 
 - [x] Authentication & authorization
 - [x] Role-based access control (MERCHANT/EMPLOYEE)
+- [x] Docker containerization
 - [ ] Rate limiting
 - [ ] Bulk tip operations
 - [ ] Export functionality (CSV/PDF)

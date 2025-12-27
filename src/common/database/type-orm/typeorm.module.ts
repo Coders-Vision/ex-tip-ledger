@@ -32,7 +32,7 @@ import { TipIntentRepository } from './repositories/tip-intent.repository';
         cli: {
           migrationsDir: __dirname + '/migrations/',
         },
-        ssl: configService.get('DB_SSL'),
+        ssl: configService.get('DB_SSL') === 'true',
         // logging: true,
         // logger: 'advanced-console',
       }),
