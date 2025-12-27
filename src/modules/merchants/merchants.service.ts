@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TipIntent, TipIntentStatus,Merchant } from 'src/common/database/type-orm/entities';
-import { TipIntentRepository,BaseRepository } from 'src/common/database/type-orm/repositories';
-import { MerchantTipSummaryDto, TipStatusSummary } from './dto';
+import { TipIntent, TipIntentStatus, Merchant } from 'src/common/database/type-orm/entities';
+import { TipIntentRepository, BaseRepository } from 'src/common/database/type-orm/repositories';
+import { MerchantTipSummaryDto, TipStatusSummary, MerchantListResponseDto, MerchantResponseDto } from './dto';
 @Injectable()
 export class MerchantsService {
   private readonly logger = new Logger(MerchantsService.name);
@@ -87,5 +87,34 @@ export class MerchantsService {
    */
   async create(data: Partial<Merchant>): Promise<Merchant> {
     return this.merchantRepo.save(data);
+  }
+
+  /**
+   * Get all merchants
+   */
+  async findAll(): Promise<MerchantListResponseDto> {
+    const [merchants, total] = await this.merchantRepo.findAndCount({
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      merchants: merchants.map((merchant) => this.mapToResponse(merchant)),
+      total,
+    };
+  }
+
+  /**
+   * Map entity to response DTO
+   */
+  private mapToResponse(merchant: Merchant): MerchantResponseDto {
+    return {
+      id: merchant.id,
+      name: merchant.name,
+      email: merchant.email,
+      phone: merchant.phone,
+      active: merchant.active,
+      userId: merchant.userId,
+      createdAt: merchant.createdAt,
+    };
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LedgerEntry, Employee } from 'src/common/database/type-orm/entities';
-import { EmployeeTipsDto } from './dto';
+import { EmployeeTipsDto, EmployeeListResponseDto, EmployeeResponseDto } from './dto';
 import { BaseRepository } from 'src/common/database/type-orm/repositories';
 
 @Injectable()
@@ -67,5 +67,50 @@ export class EmployeesService {
    */
   async create(data: Partial<Employee>): Promise<Employee> {
     return this.employeeRepo.save(data);
+  }
+
+  /**
+   * Get all employees
+   */
+  async findAll(): Promise<EmployeeListResponseDto> {
+    const [employees, total] = await this.employeeRepo.findAndCount({
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      employees: employees.map((employee) => this.mapToResponse(employee)),
+      total,
+    };
+  }
+
+  /**
+   * Get all employees for a specific merchant
+   */
+  async findByMerchantId(merchantId: string): Promise<EmployeeListResponseDto> {
+    const [employees, total] = await this.employeeRepo.findAndCount({
+      where: { merchantId },
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      employees: employees.map((employee) => this.mapToResponse(employee)),
+      total,
+    };
+  }
+
+  /**
+   * Map entity to response DTO
+   */
+  private mapToResponse(employee: Employee): EmployeeResponseDto {
+    return {
+      id: employee.id,
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone,
+      active: employee.active,
+      merchantId: employee.merchantId,
+      userId: employee.userId,
+      createdAt: employee.createdAt,
+    };
   }
 }

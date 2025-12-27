@@ -4,7 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, UserListResponseDto, UserResponseDto } from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from 'src/common/database/type-orm/entities';
@@ -120,5 +120,34 @@ export class UserService {
 
   async findEmployeeByUserId(userId: string) {
     return this.employeesService.findByUserId(userId);
+  }
+
+  /**
+   * Get all users
+   */
+  async findAll(): Promise<UserListResponseDto> {
+    const [users, total] = await this.userRepository.findAndCount({
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      users: users.map((user) => this.mapToResponse(user)),
+      total,
+    };
+  }
+
+  /**
+   * Map entity to response DTO
+   */
+  private mapToResponse(user: User): UserResponseDto {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      active: user.active,
+      createdAt: user.createdAt,
+    };
   }
 }

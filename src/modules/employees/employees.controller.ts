@@ -1,12 +1,34 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { EmployeesService } from './employees.service';
-import { EmployeeTipsDto, ParamEmployeeDto } from './dto';
+import { EmployeeTipsDto, ParamEmployeeDto, EmployeeListResponseDto } from './dto';
 
 @ApiTags('Employees')
 @Controller('employees')
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all employees' })
+  @ApiQuery({
+    name: 'merchantId',
+    required: false,
+    description: 'Filter by merchant ID',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of employees retrieved successfully',
+    type: EmployeeListResponseDto,
+  })
+  async findAll(
+    @Query('merchantId') merchantId?: string,
+  ): Promise<EmployeeListResponseDto> {
+    if (merchantId) {
+      return this.employeesService.findByMerchantId(merchantId);
+    }
+    return this.employeesService.findAll();
+  }
 
   @Get(':id/tips')
   @ApiOperation({ summary: 'Get ledger entries and total tips for an employee' })

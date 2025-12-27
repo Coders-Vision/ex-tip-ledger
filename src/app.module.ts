@@ -9,6 +9,7 @@ import { TipsModule } from './modules/tips/tips.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { QueueModule } from './common/queue/queue.module';
+import { TableQRsModule } from './modules/table-qrs/table-qrs.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { QueueModule } from './common/queue/queue.module';
     UsersModule,
     MerchantsModule,
     EmployeesModule,
+    TableQRsModule,
     TipsModule,
     QueueModule,
   ],

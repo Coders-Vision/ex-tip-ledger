@@ -1,12 +1,23 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { MerchantsService } from './merchants.service';
-import { MerchantTipSummaryDto, ParamMerchantDto } from './dto';
+import { MerchantTipSummaryDto, ParamMerchantDto, MerchantListResponseDto } from './dto';
 
 @ApiTags('Merchants')
 @Controller('merchants')
 export class MerchantsController {
   constructor(private readonly merchantsService: MerchantsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all merchants' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of merchants retrieved successfully',
+    type: MerchantListResponseDto,
+  })
+  async findAll(): Promise<MerchantListResponseDto> {
+    return this.merchantsService.findAll();
+  }
 
   @Get(':id/tips/summary')
   @ApiOperation({ summary: 'Get tip summary for a merchant grouped by status' })
