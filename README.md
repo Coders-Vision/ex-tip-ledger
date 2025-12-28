@@ -48,9 +48,6 @@ ex-tip-ledger/
 └── docker-compose.yml        # Full stack deployment
 ```
 
-> 📚 **For detailed documentation**, see the README files in each app:
-> - [Backend README](./backend/README.md) - API endpoints, database schema, RabbitMQ setup, testing
-> - [Frontend README](./frontend/README.md) - Components, server actions, authentication flow
 
 ## Quick Start
 
@@ -195,6 +192,30 @@ pnpm build          # Build for production
 pnpm start          # Run production build
 pnpm lint           # Run ESLint
 ```
+
+## Assessment Guide
+
+To review and test the full system end-to-end:
+
+1. **Start the stack** (see Quick Start above).
+2. **Access API documentation** at [http://localhost:3000/docs](http://localhost:3000/docs) (Swagger UI).
+3. **Seeded data**: The system auto-seeds essential data (merchants, employees, etc.) on first run.
+4. **Get IDs for testing:**
+   - Use the `/users`, `/merchants`, or `/employees` endpoints in Swagger to list available users and get their IDs.
+5. **Create a tip intent:**
+   - Use the `/tips/intents` POST endpoint in Swagger.
+   - Provide a valid `merchantId`, `employeeId`, `tableCode`, `amount`, and a unique `idempotencyKey`.
+6. **Complete the tip flow:**
+   - The backend will process the tip intent (RabbitMQ, DB update, etc.).
+   - You can verify the ledger and tip status via the `/employees/{id}/tips` and `/merchants/{id}/tips/summary` endpoints.
+7. **UI Verification:**
+   - Login as a merchant or employee using the test credentials in this README.
+   - View dashboards to confirm the tip/ledger updates.
+
+> **For detailed documentation**, see the README files in each app:
+> - [Backend README](./backend/README.md) - API endpoints, database schema, RabbitMQ setup, testing
+> - [Frontend README](./frontend/README.md) - Components, server actions, authentication flow
+
 
 ## License
 
