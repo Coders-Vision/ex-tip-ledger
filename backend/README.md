@@ -513,7 +513,7 @@ channel.ack(message);
 
 ### Docker Setup
 
-RabbitMQ is included in docker-compose with management UI:
+RabbitMQ is included in the root docker-compose with management UI:
 
 ```yaml
 rabbitmq:
@@ -605,14 +605,18 @@ Swagger UI available at: `http://localhost:3000/docs`
 
 ## Docker
 
+The docker-compose file is located in the **project root** (not in backend folder):
+
 ```bash
-docker compose up --build  # Start services (API: 3000, PostgreSQL: 5433, RabbitMQ: 5672/15672)
+# From project root
+docker compose up --build
 ```
 
 ### Services
 
 | Service | Port | Description |
 |---------|------|-------------|
+| `frontend` | 3001 | Next.js dashboard |
 | `tip-ledger-api` | 3000 | NestJS API |
 | `postgres` | 5433 | PostgreSQL database |
 | `rabbitmq` | 5672, 15672 | RabbitMQ (AMQP + Management UI) |
