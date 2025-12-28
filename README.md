@@ -219,4 +219,4 @@ To review and test the full system end-to-end:
 
 ## License
 
-MIT
+UNLICENSED - Private project
