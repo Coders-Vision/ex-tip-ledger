@@ -64,7 +64,7 @@ git clone https://github.com/Coders-Vision/ex-tip-ledger.git
 cd ex-tip-ledger
 
 # Start all services
-docker compose up -d
+docker compose up --build 
 ```
 
 Services will be available at:
