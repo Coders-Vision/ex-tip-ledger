@@ -48,6 +48,10 @@ ex-tip-ledger/
 └── docker-compose.yml        # Full stack deployment
 ```
 
+> 📚 **For detailed documentation**, see the README files in each app:
+> - [Backend README](./backend/README.md) - API endpoints, database schema, RabbitMQ setup, testing
+> - [Frontend README](./frontend/README.md) - Components, server actions, authentication flow
+
 ## Quick Start
 
 ### Prerequisites
@@ -130,8 +134,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 After seeding the database:
 
 ```
-Merchant: mountain_Bechtelar@gmail.com
-Employee: Brad_Trantow@hotmail.com
+Merchant: <Any Email for Merchant (Take from Swagger)>
+Employee: <Any Email for Employee based on Merchant (Take from Swagger)>
 Password: Password123!
 ```
 
